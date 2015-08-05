@@ -1,7 +1,5 @@
 package com.bjhit.martin.vnc.io;
 
-import java.io.UnsupportedEncodingException;
-
 import com.bjhit.martin.vnc.common.LogWriter;
 import com.bjhit.martin.vnc.decode.Decoder;
 import com.bjhit.martin.vnc.exception.BaseException;
@@ -68,7 +66,7 @@ public abstract class CMsgReader {
 			if (UnicodeUtil.firstIsUnicode(str)) {
 				str = UnicodeUtil.decodeUnicode(str);
 			}
-		} catch (UnsupportedEncodingException e) {
+		} catch (Exception e) {
 			vlog.error("server cut text decode error:"+e.getMessage());
 			return;
 		}
