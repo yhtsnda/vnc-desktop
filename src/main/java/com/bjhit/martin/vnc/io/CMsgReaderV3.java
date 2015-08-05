@@ -20,6 +20,7 @@
 
 package com.bjhit.martin.vnc.io;
 
+import com.bjhit.martin.vnc.client.Keysyms;
 import com.bjhit.martin.vnc.common.LogWriter;
 import com.bjhit.martin.vnc.rfb.ClientMessageHandler;
 import com.bjhit.martin.vnc.rfb.Encodings;
@@ -121,6 +122,9 @@ public class CMsgReaderV3 extends CMsgReader {
 				imageIsUpdate = isImageUpdate(encoding,x,y,w,h);
 				vlog.debug("imageIsUpdate:"+imageIsUpdate+"  "+"encode:"+encoding+"---"+x+":"+y+"  "+w+":"+h);
 				handler.framebufferUpdateEnd(imageIsUpdate);
+				if (imageIsUpdate) {
+					handler.writeKey(Keysyms.Control_R);
+				}
 			}
 		}
 	}

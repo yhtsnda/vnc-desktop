@@ -38,6 +38,9 @@ import java.awt.Dimension;
 import java.awt.Event;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -50,12 +53,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.JOptionPane;
-
 import com.bjhit.martin.vnc.common.ConnectionInfo;
 import com.bjhit.martin.vnc.common.DefaultVncValue;
 import com.bjhit.martin.vnc.common.LogWriter;
-import com.bjhit.martin.vnc.common.RecordState;
 import com.bjhit.martin.vnc.io.MemInStream;
 import com.bjhit.martin.vnc.io.Socket;
 import com.bjhit.martin.vnc.io.TcpSocket;
@@ -354,6 +354,23 @@ public class CConn extends CConnection implements UserPasswdGetter, OptionsDialo
 	}
 
 	public void serverCutText(String str, int len) {
+		SecurityManager sm = System.getSecurityManager();
+		try {
+			if (sm != null){
+				sm.checkSystemClipboardAccess();
+			}
+			Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
+			if (cb != null) {
+				StringSelection ss = new StringSelection(str);
+				try {
+					cb.setContents(ss, ss);
+				} catch (Exception e) {
+					vlog.debug(e.toString());
+				}
+			}
+		} catch (SecurityException e) {
+			vlog.error("Cannot access the system clipboard");
+		}
 	}
 
 	public void beginRect(Rect r, int encoding) {
@@ -1534,5 +1551,10 @@ public class CConn extends CConnection implements UserPasswdGetter, OptionsDialo
 	public DesktopWindow getDesktop() {
 		return desktop;
 	}
-
+	
+	@Override
+	public void writeKey(int keyCode) {
+		writeKeyEvent(keyCode, true);
+		writeKeyEvent(keyCode, false);
+	}
 }

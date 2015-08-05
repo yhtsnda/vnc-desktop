@@ -112,4 +112,7 @@ abstract public class ClientMessageHandler {
 	public abstract PixelFormat getPreferredPF();
 
 	public abstract void refreshFramebuffer();
+
+	public void writeKey(int keycode){}
+
 }

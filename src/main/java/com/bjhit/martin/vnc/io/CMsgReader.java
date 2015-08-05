@@ -9,6 +9,7 @@ import com.bjhit.martin.vnc.exception.NumberExceedException;
 import com.bjhit.martin.vnc.rfb.ClientMessageHandler;
 import com.bjhit.martin.vnc.rfb.Point;
 import com.bjhit.martin.vnc.rfb.Rect;
+import com.bjhit.martin.vnc.util.UnicodeUtil;
 
 
 /**
@@ -63,9 +64,13 @@ public abstract class CMsgReader {
 		is.readBytes(buf, 0, len);
 		String str = new String();
 		try {
-			str = new String(buf, "UTF8");
+			str = new String(buf, "GBK");
+			if (UnicodeUtil.firstIsUnicode(str)) {
+				str = UnicodeUtil.decodeUnicode(str);
+			}
 		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
+			vlog.error("server cut text decode error:"+e.getMessage());
+			return;
 		}
 		handler.serverCutText(str, len);
 	}

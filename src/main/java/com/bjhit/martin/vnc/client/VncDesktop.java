@@ -192,7 +192,7 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 
 	private void readInitParameters() {
 		connectionInfo.setHost(getParameter("host"));
-		connectionInfo.setHost("172.19.106.253");
+		connectionInfo.setHost("172.19.106.242");
 		if (StringUtil.isEmpty(connectionInfo.getHost())) {
 			connectionInfo.setHost(getParameter(getCodeBase().getHost()));
 			if (StringUtil.isEmpty(connectionInfo.getHost())) {
@@ -213,8 +213,8 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 			showControls = false;
 		}
 //		connectionInfo.setVmId(getParameter("vmId"));
-//		connectionInfo.setEncodePassword("wCVfAXGTaLw=");
-		connectionInfo.setPort(5902);
+		connectionInfo.setEncodePassword("wCVfAXGTaLw=");
+		connectionInfo.setPort(5901);
 		showControls = true;
 	}
 
