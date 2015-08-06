@@ -8,7 +8,7 @@
 
 <SCRIPT type="text/javascript">
 	function openvmconsole(){
-		var url = "console.jsp?host=172.19.106.109&port=6005&isControl=true&encodePassword=wCVfAXGTaLw=&proxy=&proxyPort=1080";
+		var url = "console.jsp?host=172.19.106.242&port=5901&isControl=true&encodePassword=wCVfAXGTaLw=&proxy=&proxyPort=1080";
 		window.open (url, 'newwindow', 'top=0,left=0, toolbar=no, menubar=no, scrollbars=yes, resizable=yes,location=no, status=no');
 	}
 	
