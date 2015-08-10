@@ -70,6 +70,7 @@ public abstract class CMsgReader {
 			vlog.error("server cut text decode error:"+e.getMessage());
 			return;
 		}
+		vlog.info("text:"+str+"   len="+len);
 		handler.serverCutText(str, len);
 	}
 

@@ -5,6 +5,7 @@ package com.bjhit.martin.vnc.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -17,8 +18,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.sf.json.JSONObject;
 
+import com.bjhit.martin.vnc.common.ConnectType;
 import com.bjhit.martin.vnc.common.ConnectionInfo;
 import com.bjhit.martin.vnc.record.RecordThread;
+import com.bjhit.martin.vnc.util.DescryptUtil;
 import com.bjhit.martin.vnc.util.StringUtil;
 
 /**
@@ -115,6 +118,13 @@ public class RecordServlet extends HttpServlet {
 		info.setPort(jsonObject.getInt("port"));
 		if (jsonObject.containsKey("encodePassword")) {
 			info.setEncodePassword(jsonObject.getString("encodePassword"));
+			try {
+				info.setPassword(DescryptUtil.decode(info.getEncodePassword()));
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		if (jsonObject.containsKey("proxyHost")) {
 			info.setProxyHost(jsonObject.getString("proxyHost"));
@@ -122,8 +132,15 @@ public class RecordServlet extends HttpServlet {
 		if (jsonObject.containsKey("proxyPort")) {
 			info.setProxyPort(jsonObject.getInt("proxyPort"));
 		}
-		if (jsonObject.containsKey("vmId")) {
-			info.setVmId(jsonObject.getString("vmId"));
+		if (jsonObject.containsKey("vmName")) {
+			info.setVmId(jsonObject.getString("vmName"));
+		}
+		if (jsonObject.containsKey("connectType")) {
+			ConnectType type = ConnectType.getType(jsonObject.getString("connectType").trim());
+			info.setConnType(type);
+		}
+		if (jsonObject.containsKey("userName")) {
+			info.setUserName(jsonObject.getString("userName"));
 		}
 		return info;
 	}

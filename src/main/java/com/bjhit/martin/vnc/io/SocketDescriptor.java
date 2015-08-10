@@ -17,95 +17,56 @@
  */
 package com.bjhit.martin.vnc.io;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Authenticator;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
-import java.net.Proxy;
-import java.net.Socket;
-
-import com.bjhit.martin.vnc.common.ConnectionInfo;
 import com.bjhit.martin.vnc.common.LogWriter;
 import com.bjhit.martin.vnc.exception.AppIOException;
-import com.bjhit.martin.vnc.util.StringUtil;
 
 public class SocketDescriptor implements FileDescriptor {
 
-	private Socket socket;
-	private InputStream in;
-	private OutputStream out;
-	private ConnectionInfo connInfo;
+	private VncSession vncSession;
 	private static LogWriter log = new LogWriter("SocketDescriptor");
 	
-	public SocketDescriptor(ConnectionInfo connInfo) {
-		this.connInfo = connInfo;
+	public SocketDescriptor(VncSession vncSession) {
+		this.vncSession = vncSession;
 	}
 
 	public int read(byte[] buf, int off, int length) throws AppIOException {
 		try {
-			int count = this.in.read(buf, off, length);
-
+			int count = vncSession.read(buf, off, length);
 			return count;
-		} catch (IOException e) {
-			throw new AppIOException(e);
+		} catch (AppIOException e) {
+			throw e;
 		}
 	}
 
 	public void write(byte[] buf, int off, int length) throws AppIOException {
 		try {
-			out.write(buf, off, length);
-		} catch (IOException e) {
-			throw new AppIOException(e);
+			vncSession.write(buf, off, length);
+		} catch (AppIOException e) {
+			throw e;
 		}
 	}
 
 	public void close() throws AppIOException {
 		try {
-			this.in.close();
-			this.out.close();
-			this.socket.close();
-		} catch (IOException e) {
-			throw new AppIOException(e);
+			vncSession.close();
+		} catch (AppIOException e) {
+			throw e;
 		}
 	}
 
-	public boolean connet() {
+	public boolean connet() throws Exception {
 		try {
-			if (!(StringUtil.isEmpty(this.connInfo.getProxyHost())))
-				this.socket = new Socket(initProxy());
-			else {
-				this.socket = new Socket();
-			}
-			this.socket.connect(new InetSocketAddress(this.connInfo.getHost(), this.connInfo.getPort()));
-
-			this.in = this.socket.getInputStream();
-			this.out = this.socket.getOutputStream();
-		} catch (IOException e) {
-			log.debug(e.getMessage());
-			return false;
+			boolean success = vncSession.initConnection();
+			return success;
+		} catch (Exception e) {
+			log.error(e.getMessage());
+			throw e;
 		}
-		return true;
 	}
 
-	private Proxy initProxy() {
-		Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(this.connInfo.getProxyHost(), this.connInfo.getProxyPort()));
-
-		Authenticator auth = new Authenticator() {
-			String pwd;
-			private PasswordAuthentication pa;
-
-			protected PasswordAuthentication getPasswordAuthentication() {
-				return this.pa;
-			}
-		};
-		Authenticator.setDefault(auth);
-		return proxy;
+	public VncSession getVncSession() {
+		return vncSession;
 	}
 
-	public Socket socket() {
-		return this.socket;
-	}
-
+	
 }

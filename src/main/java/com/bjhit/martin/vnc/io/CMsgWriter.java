@@ -30,6 +30,7 @@ import com.bjhit.martin.vnc.rfb.MsgTypes;
 import com.bjhit.martin.vnc.rfb.PixelFormat;
 import com.bjhit.martin.vnc.rfb.Point;
 import com.bjhit.martin.vnc.rfb.Rect;
+import com.bjhit.martin.vnc.util.UnicodeUtil;
 
 abstract public class CMsgWriter {
 
@@ -182,15 +183,17 @@ abstract public class CMsgWriter {
 
 	synchronized public void writeClientCutText(String str, int len) {
 		try {
-			byte[] utf8str = str.getBytes("UTF8");
+			String unicode = UnicodeUtil.GBK2Unicode(str);
+			byte[] utf8str = unicode.getBytes("UTF-8");
+			int leng = utf8str.length;
 			checkBuffSize(utf8str.length + 8);
 			buff[0] = MsgTypes.msgTypeClientCutText;
-			buff[4] = (byte) (len >> 24 & 0xff);
-			buff[5] = (byte) (len >> 16 & 0xff);
-			buff[6] = (byte) (len >> 8 & 0xff);
-			buff[7] = (byte) (len & 0xff);
-			System.arraycopy(utf8str, 0, buff, 8, len);
-			os.writeBuffer(buff, 0, len + 8);
+			buff[4] = (byte) (leng >> 24 & 0xff);
+			buff[5] = (byte) (leng >> 16 & 0xff);
+			buff[6] = (byte) (leng >> 8 & 0xff);
+			buff[7] = (byte) (leng & 0xff);
+			System.arraycopy(utf8str, 0, buff, 8, leng);
+			os.writeBuffer(buff, 0, leng + 8);
 		} catch (java.io.UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}

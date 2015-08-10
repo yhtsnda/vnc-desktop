@@ -34,19 +34,22 @@ public class ConnectionInfo {
 	
 	private int connectCount = 1;
 	
+	private ConnectType connType;
+	
 	public ConnectionInfo() {
 		
 	}
 	
-	public ConnectionInfo(String vmId,String host,int port,String password) {
+	public ConnectionInfo(String vmId,String host,int port,String password,ConnectType connectType) {
 		this.vmId = vmId;
 		this.host = host;
 		this.port = port;
 		this.password = password;
+		this.connType = connectType;
 	}
 	
-	public ConnectionInfo(String vmId,String host,int port,String password,String proxyHost,int proxyPort) {
-		this(vmId,host, port,password);
+	public ConnectionInfo(String vmId,String host,int port,String password,String proxyHost,int proxyPort,ConnectType connectType) {
+		this(vmId,host, port,password,connectType);
 		this.proxyHost = proxyHost;
 		this.proxyPort = proxyPort;
 	}
@@ -166,7 +169,7 @@ public class ConnectionInfo {
 	public boolean equals(Object obj) {
 		if (obj instanceof ConnectionInfo) {
 			ConnectionInfo info = (ConnectionInfo) obj;
-			if (StringUtil.equal(host, info.getHost()) && port == info.getPort()) {
+			if (StringUtil.equal(host, info.getHost()) && port == info.getPort() && StringUtil.equal(vmId, info.getVmId())) {
 				return true;
 			}else {
 				return false;
@@ -235,6 +238,15 @@ public class ConnectionInfo {
 	public void setConnectCount(int connectCount) {
 		this.connectCount = connectCount;
 	}
+
+	public ConnectType getConnType() {
+		return connType;
+	}
+
+	public void setConnType(ConnectType connType) {
+		this.connType = connType;
+	}
+	
 	
 }
 

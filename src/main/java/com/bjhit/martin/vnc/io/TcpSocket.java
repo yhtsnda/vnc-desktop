@@ -64,22 +64,28 @@ public class TcpSocket extends Socket {
 
 		initSockets();
 		try {
-			this.socket = new SocketDescriptor(connInfo);
+			this.socket = new SocketDescriptor(ConnectionFactory.getConnection(connInfo));
 			result = this.socket.connet();
 		} catch (Exception e) {
-			throw new RuntimeException("unable to create socket: " + e.toString());
+			throw e;
 		}
 		if (!(result)) {
-			throw new RuntimeException("unable connect to socket");
+			throw new RuntimeException("unable to create socket(host address:" + connInfo.getHost()+",port:"+connInfo.getPort()+").");
 		}
 
 		this.instream = new FdInStream(this.socket);
 		this.outstream = new FdOutStream(this.socket);
 		this.ownStreams = true;
 	}
-
+	/**
+	 * 
+	 * @return
+	 */
 	public int getSockPort() {
-		return ((InetSocketAddress) ((SocketDescriptor) getFd()).socket().getRemoteSocketAddress()).getPort();
+		if (((SocketDescriptor) getFd()).getVncSession()!=null && ((SocketDescriptor) getFd()).getVncSession().socket !=null) {
+			return ((InetSocketAddress) ((SocketDescriptor) getFd()).getVncSession().socket.getRemoteSocketAddress()).getPort();
+		}
+		return -1;
 	}
 
 }

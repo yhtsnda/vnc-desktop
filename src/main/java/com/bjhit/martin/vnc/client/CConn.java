@@ -40,6 +40,7 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -355,15 +356,18 @@ public class CConn extends CConnection implements UserPasswdGetter, OptionsDialo
 
 	public void serverCutText(String str, int len) {
 		SecurityManager sm = System.getSecurityManager();
+		vlog.info(str);
 		try {
 			if (sm != null){
 				sm.checkSystemClipboardAccess();
 			}
 			Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
+			vlog.info("server:"+cb.toString());
 			if (cb != null) {
 				StringSelection ss = new StringSelection(str);
 				try {
 					cb.setContents(ss, ss);
+					vlog.info("clipboard context:"+cb.getContents(null).getTransferData(DataFlavor.stringFlavor));
 				} catch (Exception e) {
 					vlog.debug(e.toString());
 				}

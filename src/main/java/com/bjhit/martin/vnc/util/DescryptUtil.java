@@ -128,5 +128,25 @@ public class DescryptUtil {
         SecretKey secretKey = kg.generateKey();
         return Base64Util.encode(secretKey.getEncoded());
     }
-    
+    /**
+     * 返回一个加密字符串
+     * @param source 没有加密的字符串
+     * @return
+     * @throws UnsupportedEncodingException
+     * @throws Exception
+     * 
+     */
+    public static String encode(String source) throws UnsupportedEncodingException, Exception {
+		return Base64Util.encode(DescryptUtil.encrypt(source.getBytes("UTF-8"), DescryptUtil.DEFAULT_KEY));
+	}
+    /**
+     * 返回加密字符串解密后的信息
+     * @param encodeStr 一个加密字符串
+     * @return
+     * @throws UnsupportedEncodingException
+     * @throws Exception
+     */
+    public static String decode(String encodeStr) throws UnsupportedEncodingException, Exception {
+		return new String(DescryptUtil.decrypt(Base64Util.decode(encodeStr), DescryptUtil.DEFAULT_KEY), "utf-8");
+	}
 }

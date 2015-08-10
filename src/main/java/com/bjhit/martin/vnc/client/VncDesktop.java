@@ -27,27 +27,40 @@ import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
+import java.io.IOException;
 import java.util.Enumeration;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JButton;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.IconUIResource;
 
+import com.bjhit.martin.vnc.common.ConnectType;
 import com.bjhit.martin.vnc.common.ConnectionInfo;
 import com.bjhit.martin.vnc.common.LogWriter;
+import com.bjhit.martin.vnc.common.OsType;
 import com.bjhit.martin.vnc.exception.AppIOException;
 import com.bjhit.martin.vnc.util.StringUtil;
+import com.bjhit.martin.vnc.util.UnicodeUtil;
 
 @SuppressWarnings("serial")
 public class VncDesktop extends JApplet implements Runnable, WindowListener {
@@ -57,7 +70,8 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 	private CConn cc;
 	private boolean stopped = false;
 	static LogWriter vlog = new LogWriter("VncDesktop");
-
+	Clipboard clipBoard = Toolkit.getDefaultToolkit().getSystemClipboard();
+	OsType serverOsType;
 	public static void setLookAndFeel() {
 		try {
 			String laf = System.getProperty("swing.defaultlaf");
@@ -105,7 +119,8 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 	public void init() {
 		setLookAndFeel();
 		setFocusable(false);
-		UIManager.getDefaults().put("ScrollPane.ancestorInputMap", new UIDefaults.LazyInputMap(new Object[0]));
+		UIManager.getDefaults().put("ScrollPane.ancestorInputMap",
+				new UIDefaults.LazyInputMap(new Object[0]));
 
 		connectionInfo = new ConnectionInfo();
 		readInitParameters();
@@ -117,16 +132,37 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 
 	private GridBagLayout layout;
 	private JButton options;
-//	private JButton record;
+	// private JButton record;
 	private JButton ctlAltDel;
 	private GridBagConstraints gbc;
 	private ButtonActionListener listener;
 	private JScrollPane scrollPane;
 
+	private JButton copy;
+	ImageIcon icon;
 	private void initComponents() {
-		options = new JButton("Options");
-//		record = new JButton(RecordState.REC_INIT);
-		ctlAltDel = new JButton("Clt+Alt+Del");
+		icon = new ImageIcon(this.getClass().getResource("/setting.png").getFile());
+		if (icon == null) {
+			options = new JButton("Options");
+		}else {
+			options = new JButton(icon);
+		}
+		// record = new JButton(RecordState.REC_INIT);
+		icon = new ImageIcon(this.getClass().getResource("/copy.png").getFile());
+		copy = new JButton("");
+		if (icon != null) {
+			copy.setIcon(icon);
+		}else {
+			copy.setText("copy");
+		}
+		ctlAltDel = new JButton("");
+		icon = new ImageIcon(this.getClass().getResource("/ctrl_alt_del.png").getFile());
+		if (icon != null) {
+			ctlAltDel.setIcon(icon);
+		}else {
+			ctlAltDel.setText("ctrl+alt+del");
+		}
+		
 		JPanel toolPanel = new JPanel();
 		scrollPane = new JScrollPane();
 		scrollPane.setBackground(Color.BLUE);
@@ -138,7 +174,8 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 		gbc = new GridBagConstraints();// 定义一个GridBagConstraints，
 		this.getContentPane().setLayout(layout);
 		this.getContentPane().add(options);// 添加组件
-//		this.getContentPane().add(record);
+		// this.getContentPane().add(record);
+		this.getContentPane().add(copy);
 		this.getContentPane().add(ctlAltDel);
 		this.getContentPane().add(toolPanel);
 		this.getContentPane().add(scrollPane);
@@ -155,10 +192,10 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 		gbc.weightx = 0;// 该方法设置组件水平的拉伸幅度，如果为0就说明不拉伸，不为0就随着窗口增大进行拉伸，0到1之间
 		gbc.weighty = 0;// 该方法设置组件垂直的拉伸幅度，如果为0就说明不拉伸，不为0就随着窗口增大进行拉伸，0到1之间
 		layout.setConstraints(options, gbc);// 设置组件
-//		gbc.gridwidth = 1;
-//		gbc.weightx = 0;
-//		gbc.weighty = 0;
-//		layout.setConstraints(record, gbc);
+		gbc.gridwidth = 1;
+		gbc.weightx = 0;
+		gbc.weighty = 0;
+		layout.setConstraints(copy, gbc);
 		gbc.gridwidth = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
@@ -179,27 +216,28 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 
 		listener = new ButtonActionListener();
 		options.addActionListener(listener);
-//		record.addActionListener(listener);
+		copy.addActionListener(listener);
 		ctlAltDel.addActionListener(listener);
 		options.setEnabled(showControls);
-//		record.setEnabled(false);
+		copy.setEnabled(true);
 		ctlAltDel.setEnabled(false);
 		options.setVisible(true);
-//		record.setVisible(true);
+		copy.setVisible(true);
 		ctlAltDel.setVisible(true);
 
 	}
 
 	private void readInitParameters() {
 		connectionInfo.setHost(getParameter("host"));
-		connectionInfo.setHost("172.19.106.242");
+		connectionInfo.setHost("172.19.106.252");
 		if (StringUtil.isEmpty(connectionInfo.getHost())) {
 			connectionInfo.setHost(getParameter(getCodeBase().getHost()));
 			if (StringUtil.isEmpty(connectionInfo.getHost())) {
 				throw new RuntimeException("HOST parameter not specified");
 			}
 		}
-		connectionInfo.setPort(Integer.parseInt((StringUtil.isEmpty(getParameter("port"))) ? "0" : getParameter("port")));
+		connectionInfo.setPort(Integer.parseInt((StringUtil.isEmpty(getParameter("port"))) ? "0"
+				: getParameter("port")));
 		connectionInfo.setEncodePassword(getParameter("encodePassword"));
 		connectionInfo.setProxyHost(getParameter("proxy"));
 		String proxyport = getParameter("proxyPort");
@@ -212,10 +250,25 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 		} else {
 			showControls = false;
 		}
-//		connectionInfo.setVmId(getParameter("vmId"));
-		connectionInfo.setEncodePassword("wCVfAXGTaLw=");
-		connectionInfo.setPort(5901);
+		String connetTypeStr = getParameter("connectType");
+		connetTypeStr = "xen_vnc";
+		if (StringUtil.isEmpty(connetTypeStr)) {
+			throw new RuntimeException("Please set the connectType value!");
+		}else {
+			ConnectType connectType = ConnectType.getType(connetTypeStr);
+			if (connectType == null) {
+				throw new RuntimeException("Please set the connectType value!");
+			}
+			connectionInfo.setConnType(connectType);
+		}
+		// connectionInfo.setVmId(getParameter("vmId"));
+//		connectionInfo.setEncodePassword("wCVfAXGTaLw=");
+		connectionInfo.setPort(443);
+		connectionInfo.setUserName("root");
+		connectionInfo.setPassword("bjhit2015");
 		showControls = true;
+//		serverOsType = OsType.Linux;
+		connectionInfo.setVmId("Windows XP SP3");
 	}
 
 	public void run() {
@@ -227,15 +280,16 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 			while (!stopped && !(cc.isShuttingDown()))
 				cc.processMsg();
 		} catch (AppIOException e) {
-			vlog.debug(e.getMessage());
+			JOptionPane.showMessageDialog(this, e.getMessage());
+			vlog.error(e.getMessage());
 		} catch (Exception e) {
-			vlog.debug(e.getMessage());
+			JOptionPane.showMessageDialog(this, e.getMessage());
+			vlog.error(e.getMessage());
 			if (cc != null) {
 				cc.close();
 			}
-			
 		} finally {
-			vlog.debug(cc+" finally");
+			vlog.debug(cc + " finally");
 			if (cc != null) {
 				cc.unregisterViewport(this);
 			}
@@ -293,9 +347,9 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 	/**
 	 * @return the record
 	 */
-//	public JButton getRecord() {
-//		return record;
-//	}
+	// public JButton getRecord() {
+	// return record;
+	// }
 
 	/**
 	 * @return the ctlAltDel
@@ -311,23 +365,25 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 			if (cc.getDesktop() != null) {
 				cc.getDesktop().requestFocus();
 			}
-//			if (e.getSource() == record) {
-//				if (!RecordTimer.checkSecurity(true)) {
-//					throw new RuntimeException("can not create file permission");
-//				}
-//				if (StringUtil.equalsIgnoreCase(record.getLabel(), RecordState.REC_INIT)) {
-//					try {
-//						cc.startRecord(ScreenPropertyUtil.getUserHomeDictory());
-//					} catch (IOException e1) {
-//						e1.printStackTrace();
-//					}
-//				} else if (StringUtil.equalsIgnoreCase(record.getLabel(), RecordState.REC_START)) {
-//					cc.stoppedRecord();
-//				}
-//
-//			} else 
-				
-				if (e.getSource() == ctlAltDel) {
+			// if (e.getSource() == record) {
+			// if (!RecordTimer.checkSecurity(true)) {
+			// throw new RuntimeException("can not create file permission");
+			// }
+			// if (StringUtil.equalsIgnoreCase(record.getLabel(),
+			// RecordState.REC_INIT)) {
+			// try {
+			// cc.startRecord(ScreenPropertyUtil.getUserHomeDictory());
+			// } catch (IOException e1) {
+			// e1.printStackTrace();
+			// }
+			// } else if (StringUtil.equalsIgnoreCase(record.getLabel(),
+			// RecordState.REC_START)) {
+			// cc.stoppedRecord();
+			// }
+			//
+			// } else
+
+			if (e.getSource() == ctlAltDel) {
 				cc.writeKeyEvent(Keysyms.Control_L, true);
 				cc.writeKeyEvent(Keysyms.Alt_L, true);
 				cc.writeKeyEvent(Keysyms.Delete, true);
@@ -336,12 +392,45 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 				cc.writeKeyEvent(Keysyms.Control_L, false);
 			} else if (e.getSource() == options) {
 				cc.options.showDialog(options.getParent().getParent());
+			} else if (e.getSource() == copy) {
+				String text  = getClipboardText();
+				vlog.info("writeClientCutText:"+text);
+				try {
+					cc.writeClientCutText(text, text.length());
+				} catch (Exception e1) {
+					vlog.debug(e1.toString());
+				}
 			}
+		}
+
+		private String getClipboardText() {
+			String text = null;
+			SecurityManager sm = System.getSecurityManager();
+			try {
+				if (sm != null) {
+					sm.checkSystemClipboardAccess();
+				}
+				Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
+				vlog.info(cb.toString());
+				if (cb != null) {
+					Transferable contents = cb.getContents(null);
+					if (contents == null)
+						return null;
+					try {
+						text = (String) contents.getTransferData(DataFlavor.stringFlavor);// 粘贴step2.
+					} catch (Exception exception) {
+						vlog.error("Cannot get the system clipboard text date,"+exception.getMessage());
+					}
+				}
+			} catch (SecurityException e2) {
+				vlog.error("Cannot access the system clipboard:"+e2.getMessage());
+			}
+			return text;
 		}
 	}
 
 	public void setRecordEnable(boolean enabled) {
-//		record.setEnabled(enabled);
+		// record.setEnabled(enabled);
 	}
 
 	public void setCltAltDelEnable(boolean enabled) {
@@ -399,8 +488,8 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 		// TODO Auto-generated method stub
 
 	}
-	
+
 	public String getAppletSize() {
-		return getSize().getWidth()+":"+getSize().getHeight();
+		return getSize().getWidth() + ":" + getSize().getHeight();
 	}
 }
