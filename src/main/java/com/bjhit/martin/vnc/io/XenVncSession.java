@@ -99,6 +99,7 @@ public class XenVncSession extends VncSession {
 			if (socket != null) {
 				socket.setTcpNoDelay(true);
 				socket.setSendBufferSize(65535);
+				socket.setSoTimeout(1000*60*60*3);
 			}
 		} catch (SocketException e) {
 			log.error("set socket properties error:"+e.getMessage());
