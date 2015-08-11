@@ -224,12 +224,14 @@ public class VncDesktop extends JApplet implements Runnable, WindowListener {
 		options.setVisible(true);
 		copy.setVisible(true);
 		ctlAltDel.setVisible(true);
-
+		if (connectionInfo.getConnType()==ConnectType.XEN_VNC) {
+			copy.setEnabled(false);
+		}
 	}
 
 	private void readInitParameters() {
 		connectionInfo.setHost(getParameter("host"));
-		connectionInfo.setHost("172.19.106.252");
+		connectionInfo.setHost("172.19.106.250");
 		if (StringUtil.isEmpty(connectionInfo.getHost())) {
 			connectionInfo.setHost(getParameter(getCodeBase().getHost()));
 			if (StringUtil.isEmpty(connectionInfo.getHost())) {
